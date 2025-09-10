@@ -6,6 +6,7 @@
     <title>Unity Web Player | EndlessRun</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
@@ -27,6 +28,7 @@
     <script>
       var canvas = document.querySelector("#unity-canvas");
 
+      // ---- Banner / Warning System ----
       function unityShowBanner(msg, type) {
         var warningBanner = document.querySelector("#unity-warning");
         function updateBannerVisibility() {
@@ -35,13 +37,13 @@
         var div = document.createElement('div');
         div.innerHTML = msg;
         warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px; color: white; font-weight: bold;';
+        if (type == 'error') div.style = 'background: red; padding: 10px; color:white; font-weight:bold;';
         else {
           if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
           setTimeout(function() {
             warningBanner.removeChild(div);
             updateBannerVisibility();
-          }, 5000);
+          }, 7000);
         }
         updateBannerVisibility();
       }
@@ -58,98 +60,82 @@
         productName: "EndlessRun",
         productVersion: "0.1.0",
         showBanner: unityShowBanner,
+        devicePixelRatio: Math.min(1.5, window.devicePixelRatio) // prevent overscaling on hi-res phones
       };
 
-      // ---- Compatibility Check ----
+      // ---- WebGL Checks ----
       function isWebGL2Supported() {
         try {
           var gl = document.createElement("canvas").getContext("webgl2");
           return !!gl;
-        } catch (e) {
-          return false;
-        }
+        } catch (e) { return false; }
       }
-
       function isWebGLSupported() {
         try {
           var gl = document.createElement("canvas").getContext("webgl");
           return !!gl;
-        } catch (e) {
-          return false;
-        }
+        } catch (e) { return false; }
       }
 
-      // Show permanent blocking message
-      function showBlockMessage(title, message) {
+      // ---- Device-specific checks ----
+      const ua = navigator.userAgent.toLowerCase();
+
+      // Very old phones like Galaxy S3
+      if (ua.includes("gt-i9300")) {
+        unityShowBanner("⚠️ This device (Samsung S3) is too old for 3D WebGL games. Please try on a newer phone or PC.", "error");
+      }
+
+      // New Samsung S23 / S24 series (S911, S918, S921, S926 are common model codes)
+      if (ua.includes("s911") || ua.includes("s918") || ua.includes("s921") || ua.includes("s926")) {
+        unityShowBanner("⚠️ Heads up: Some Samsung S23/S24 devices may show grey screen issues on Samsung Internet. Try Chrome or Firefox for best results.", "warning");
+      }
+
+      if (!isWebGLSupported()) {
         document.body.innerHTML = `
           <div style="display:flex;align-items:center;justify-content:center;
                       height:100vh;text-align:center;background:#111;color:#fff;
                       font-family:sans-serif;flex-direction:column;padding:20px;">
-            <h2 style="margin-bottom:20px;">${title}</h2>
-            <p style="font-size:18px;line-height:1.5;">${message}</p>
-          </div>
-        `;
-      }
-
-      // Device detection
-      const ua = navigator.userAgent.toLowerCase();
-      const incompatibleDevices = ["samsung gt-i9300", "samsung gt-i9500"]; // S3, S4
-
-      let blocked = false;
-
-      for (let device of incompatibleDevices) {
-        if (ua.includes(device)) {
-          showBlockMessage("⚠️ Device Not Supported", 
-            "Sorry, this 3D runner game may not run properly on your device (older Samsung model).<br><br>" +
-            "✅ Works on: Vivo, Oppo, Huawei, newer Samsung devices, and PC browsers.<br><br>" +
-            "Please try on a newer phone, tablet, or desktop browser.");
-          blocked = true;
-          break;
-        }
-      }
-
-      if (!blocked) {
-        if (!isWebGLSupported()) {
-          showBlockMessage("⚠️ WebGL Not Supported", 
-            "Your browser does not support WebGL.<br><br>" +
-            "Please update your browser (Chrome, Firefox, Edge) or try on a different device.");
-        } else if (!isWebGL2Supported()) {
-          showBlockMessage("⚠️ WebGL 2.0 Required", 
-            "This game requires WebGL 2.0, which your device doesn’t support.<br><br>" +
-            "It might work for 2D games, but not this 3D runner.<br><br>" +
-            "Please try on a newer device.");
+            <h2>⚠️ WebGL Not Supported</h2>
+            <p>Your browser does not support WebGL.<br><br>
+            Please update Chrome/Firefox/Edge, or try on a newer device.</p>
+          </div>`;
+      } else if (!isWebGL2Supported()) {
+        document.body.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;
+                      height:100vh;text-align:center;background:#111;color:#fff;
+                      font-family:sans-serif;flex-direction:column;padding:20px;">
+            <h2>⚠️ WebGL 2.0 Required</h2>
+            <p>This game requires WebGL 2.0.<br><br>
+            It may run 2D games but not this 3D runner.<br><br>
+            Please try a newer phone or PC.</p>
+          </div>`;
+      } else {
+        // ---- Setup Mobile/Desktop canvas ----
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          document.querySelector("#unity-container").className = "unity-mobile";
+          canvas.className = "unity-mobile";
         } else {
-          // Normal Unity bootstrap
-          if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            var meta = document.createElement('meta');
-            meta.name = 'viewport';
-            meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-            document.getElementsByTagName('head')[0].appendChild(meta);
-            document.querySelector("#unity-container").className = "unity-mobile";
-            canvas.className = "unity-mobile";
-          } else {
-            canvas.style.width = "960px";
-            canvas.style.height = "600px";
-          }
-
-          document.querySelector("#unity-loading-bar").style.display = "block";
-
-          var script = document.createElement("script");
-          script.src = loaderUrl;
-          script.onload = () => {
-            createUnityInstance(canvas, config, (progress) => {
-              document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-            }).then((unityInstance) => {
-              document.querySelector("#unity-loading-bar").style.display = "none";
-              document.querySelector("#unity-fullscreen-button").onclick = () => {
-                unityInstance.SetFullscreen(1);
-              };
-            }).catch((message) => {
-              unityShowBanner(message, 'error');
-            });
-          };
-          document.body.appendChild(script);
+          canvas.style.width = "960px";
+          canvas.style.height = "600px";
         }
+
+        document.querySelector("#unity-loading-bar").style.display = "block";
+
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+          createUnityInstance(canvas, config, (progress) => {
+            document.querySelector("#unity-progress-bar-full").style.width = (100 * progress) + "%";
+          }).then((unityInstance) => {
+            document.querySelector("#unity-loading-bar").style.display = "none";
+            document.querySelector("#unity-fullscreen-button").onclick = () => {
+              unityInstance.SetFullscreen(1);
+            };
+          }).catch((message) => {
+            unityShowBanner(message, "error");
+          });
+        };
+        document.body.appendChild(script);
       }
     </script>
   </body>

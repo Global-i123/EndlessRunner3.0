@@ -85,8 +85,8 @@
           <div style="display:flex;align-items:center;justify-content:center;
                       height:100vh;text-align:center;background:#111;color:#fff;
                       font-family:sans-serif;flex-direction:column;padding:20px;">
-            <h2>${title}</h2>
-            <p>${message}</p>
+            <h2 style="margin-bottom:20px;">${title}</h2>
+            <p style="font-size:18px;line-height:1.5;">${message}</p>
           </div>
         `;
       }
@@ -100,7 +100,8 @@
       for (let device of incompatibleDevices) {
         if (ua.includes(device)) {
           showBlockMessage("⚠️ Device Not Supported", 
-            "Sorry, this game may not run properly on your device (older Samsung model).<br>" +
+            "Sorry, this 3D runner game may not run properly on your device (older Samsung model).<br><br>" +
+            "✅ Works on: Vivo, Oppo, Huawei, newer Samsung devices, and PC browsers.<br><br>" +
             "Please try on a newer phone, tablet, or desktop browser.");
           blocked = true;
           break;
@@ -110,12 +111,12 @@
       if (!blocked) {
         if (!isWebGLSupported()) {
           showBlockMessage("⚠️ WebGL Not Supported", 
-            "Your browser does not support WebGL.<br>" +
-            "Please update your browser or try on a different device.");
+            "Your browser does not support WebGL.<br><br>" +
+            "Please update your browser (Chrome, Firefox, Edge) or try on a different device.");
         } else if (!isWebGL2Supported()) {
           showBlockMessage("⚠️ WebGL 2.0 Required", 
-            "This game requires WebGL 2.0, which your device doesn’t support.<br>" +
-            "It might work for 2D games, but not this 3D runner.<br>" +
+            "This game requires WebGL 2.0, which your device doesn’t support.<br><br>" +
+            "It might work for 2D games, but not this 3D runner.<br><br>" +
             "Please try on a newer device.");
         } else {
           // Normal Unity bootstrap
